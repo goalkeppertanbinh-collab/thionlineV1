@@ -1,0 +1,7 @@
+{
+  "name": "EduQuest Online Exam Platform",
+  "description": "A professional online examination system that synchronizes exam questions directly from Google Sheets, featuring a modern UI, real-time timer, and AI-powered performance summaries.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
