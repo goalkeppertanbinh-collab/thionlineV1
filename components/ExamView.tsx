@@ -18,41 +18,21 @@ export const ExamView: React.FC<ExamViewProps> = ({ exam, onComplete, onCancel }
   const handleFinish = useCallback(() => {
     let score = 0;
     let totalPoints = 0;
-    
     exam.questions.forEach((q) => {
       totalPoints += q.points;
-      if (answers[q.id] === q.correctAnswer) {
-        score += q.points;
-      }
+      if (answers[q.id] === q.correctAnswer) score += q.points;
     });
-
-    onComplete({
-      examId: exam.id,
-      score,
-      totalPoints,
-      completedAt: new Date(),
-      answers
-    });
+    onComplete({ examId: exam.id, score, totalPoints, completedAt: new Date(), answers });
   }, [answers, exam, onComplete]);
 
   useEffect(() => {
-    if (timeLeft <= 0) {
-      handleFinish();
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-
+    if (timeLeft <= 0) { handleFinish(); return; }
+    const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [timeLeft, handleFinish]);
 
-  const handleOptionSelect = (optionIndex: number) => {
-    setAnswers(prev => ({
-      ...prev,
-      [currentQuestion.id]: optionIndex
-    }));
+  const handleOptionSelect = (idx: number) => {
+    setAnswers(prev => ({ ...prev, [currentQuestion.id]: idx }));
   };
 
   const minutes = Math.floor(timeLeft / 60);
@@ -60,99 +40,112 @@ export const ExamView: React.FC<ExamViewProps> = ({ exam, onComplete, onCancel }
   const progress = ((currentQuestionIndex + 1) / exam.questions.length) * 100;
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-        {/* Header Section */}
-        <div className="p-6 bg-gray-50 border-b border-gray-100">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-900">{exam.title}</h2>
-            <div className={`px-4 py-2 rounded-full font-mono font-bold text-lg ${timeLeft < 60 ? 'bg-rose-100 text-rose-600 animate-pulse' : 'bg-blue-100 text-blue-600'}`}>
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl mx-auto">
+      {/* Sidebar Tiến Độ */}
+      <div className="lg:col-span-3 order-2 lg:order-1">
+        <div className="bg-white rounded-[32px] p-6 shadow-xl shadow-blue-50/50 border border-gray-100 sticky top-28">
+          <div className="mb-6">
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Danh sách câu hỏi</h3>
+            <div className="grid grid-cols-5 gap-2">
+              {exam.questions.map((q, idx) => (
+                <button
+                  key={q.id}
+                  onClick={() => setCurrentQuestionIndex(idx)}
+                  className={`w-full aspect-square rounded-xl text-xs font-bold transition-all ${
+                    currentQuestionIndex === idx 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-100 scale-110' 
+                      : answers[q.id] !== undefined
+                      ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                      : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                  }`}
+                >
+                  {idx + 1}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="pt-6 border-t border-gray-50">
+             <button 
+              onClick={() => { if(confirm("Kết thúc bài thi ngay?")) handleFinish() }}
+              className="w-full py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-bold transition-all active:scale-95 shadow-xl shadow-gray-200"
+             >
+               Nộp bài ngay
+             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Vùng nội dung chính */}
+      <div className="lg:col-span-9 order-1 lg:order-2 space-y-6">
+        <div className="bg-white rounded-[40px] shadow-2xl shadow-blue-100/20 overflow-hidden border border-gray-100">
+          <div className="p-8 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">{exam.title}</h2>
+              <p className="text-sm text-gray-400 font-medium">Chọn một đáp án đúng nhất bên dưới</p>
+            </div>
+            <div className={`px-6 py-3 rounded-2xl font-black text-xl tracking-tighter shadow-inner ${timeLeft < 60 ? 'bg-rose-50 text-rose-500 animate-pulse' : 'bg-blue-50 text-blue-600'}`}>
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </div>
           </div>
-          
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between mt-2 text-xs text-gray-500 font-medium uppercase">
-            <span>Câu {currentQuestionIndex + 1} / {exam.questions.length}</span>
-            <span>Tiến độ: {Math.round(progress)}%</span>
-          </div>
-        </div>
 
-        {/* Question Section */}
-        <div className="p-8">
-          <div className="mb-8">
-            <span className="inline-block px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md mb-3">
-              CÂU HỎI {currentQuestionIndex + 1}
-            </span>
-            <h3 className="text-xl font-medium text-gray-800 leading-relaxed">
-              {currentQuestion.question}
-            </h3>
+          <div className="p-10">
+            <div className="mb-10 animate-in fade-in slide-in-from-left-4 duration-500">
+              <span className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-lg mb-4 uppercase tracking-widest">
+                Câu hỏi {currentQuestionIndex + 1} của {exam.questions.length}
+              </span>
+              <h3 className="text-2xl font-bold text-gray-800 leading-snug">
+                {currentQuestion.question}
+              </h3>
+            </div>
+
+            <div className="grid gap-4">
+              {currentQuestion.options.map((option, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleOptionSelect(idx)}
+                  className={`w-full text-left p-6 rounded-3xl border-2 transition-all group relative flex items-center gap-5 ${
+                    answers[currentQuestion.id] === idx 
+                      ? 'border-blue-600 bg-blue-50/50 shadow-lg shadow-blue-100/50' 
+                      : 'border-gray-100 hover:border-blue-200 bg-white'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black flex-shrink-0 transition-all ${
+                    answers[currentQuestion.id] === idx 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+                      : 'bg-gray-100 text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-400'
+                  }`}>
+                    {String.fromCharCode(65 + idx)}
+                  </div>
+                  <span className={`text-lg font-semibold ${answers[currentQuestion.id] === idx ? 'text-blue-900' : 'text-gray-600'}`}>
+                    {option}
+                  </span>
+                  {answers[currentQuestion.id] === idx && (
+                    <div className="ml-auto w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-4">
-            {currentQuestion.options.map((option, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleOptionSelect(idx)}
-                className={`w-full text-left p-5 rounded-xl border-2 transition-all duration-200 group flex items-center gap-4 ${
-                  answers[currentQuestion.id] === idx 
-                    ? 'border-blue-600 bg-blue-50' 
-                    : 'border-gray-100 hover:border-gray-300 bg-white'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0 transition-colors ${
-                  answers[currentQuestion.id] === idx 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
-                }`}>
-                  {String.fromCharCode(65 + idx)}
-                </div>
-                <span className={`text-lg ${answers[currentQuestion.id] === idx ? 'text-blue-900 font-semibold' : 'text-gray-700'}`}>
-                  {option}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer Navigation */}
-        <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-          <button
-            onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-            disabled={currentQuestionIndex === 0}
-            className="px-6 py-2 rounded-lg text-sm font-bold text-gray-600 disabled:opacity-30 hover:bg-white transition-colors border border-transparent hover:border-gray-200"
-          >
-            Quay lại
-          </button>
-
-          <div className="flex gap-3">
-            <button 
-              onClick={onCancel}
-              className="px-6 py-2 rounded-lg text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+          <div className="px-10 py-8 bg-gray-50/50 flex justify-between">
+            <button
+              onClick={() => setCurrentQuestionIndex(p => Math.max(0, p - 1))}
+              disabled={currentQuestionIndex === 0}
+              className="px-6 py-3 rounded-2xl font-bold text-gray-400 hover:bg-white disabled:opacity-0 transition-all"
             >
-              Hủy thi
+              Câu trước đó
             </button>
-            
-            {currentQuestionIndex === exam.questions.length - 1 ? (
-              <button
-                onClick={handleFinish}
-                className="px-8 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transform hover:-translate-y-0.5 transition-all"
-              >
-                Nộp bài
-              </button>
-            ) : (
-              <button
-                onClick={() => setCurrentQuestionIndex(prev => Math.min(exam.questions.length - 1, prev + 1))}
-                className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transform hover:-translate-y-0.5 transition-all"
-              >
-                Tiếp theo
-              </button>
-            )}
+            <button
+              onClick={() => {
+                if(currentQuestionIndex === exam.questions.length - 1) handleFinish();
+                else setCurrentQuestionIndex(p => p + 1);
+              }}
+              className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-xl shadow-blue-200 hover:scale-105 active:scale-95 transition-all"
+            >
+              {currentQuestionIndex === exam.questions.length - 1 ? 'Hoàn tất bài thi' : 'Câu tiếp theo'}
+            </button>
           </div>
         </div>
       </div>

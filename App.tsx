@@ -23,9 +23,7 @@ const App: React.FC = () => {
     setIsLoading(false);
   };
 
-  useEffect(() => {
-    loadExams();
-  }, []);
+  useEffect(() => { loadExams(); }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,85 +38,84 @@ const App: React.FC = () => {
     }
   };
 
+  // Fix: Implemented handleExamComplete to handle exam finalization and AI feedback fetching
   const handleExamComplete = async (result: ExamResult) => {
-    const exam = exams.find(e => e.id === result.examId);
-    if (exam) {
-      setLastResult({ exam, result });
-      setCurrentExam(null);
-      setIsLoading(true);
+    if (!currentExam) return;
+    const exam = currentExam;
+    setLastResult({ exam, result });
+    setCurrentExam(null);
+    
+    setIsLoading(true);
+    try {
       const feedback = await getAIFeedback(exam, result);
       setAiFeedback(feedback);
+    } catch (error) {
+      console.error("Error getting AI feedback:", error);
+      setAiFeedback("Không thể nhận phản hồi từ AI lúc này.");
+    } finally {
       setIsLoading(false);
     }
   };
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-10 border border-gray-100">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-600 rounded-3xl shadow-lg shadow-blue-200 mb-6">
-              <span className="text-white text-4xl font-black">E</span>
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 mesh-gradient">
+        <div className="max-w-md w-full animate-in zoom-in-95 duration-700">
+          <div className="bg-white rounded-[48px] shadow-2xl shadow-blue-200/50 p-12 border border-white">
+            <div className="text-center mb-10">
+              <div className="inline-flex w-24 h-24 bg-gradient-to-tr from-blue-600 to-violet-600 rounded-[32px] shadow-2xl shadow-blue-200 mb-8 items-center justify-center animate-float">
+                <span className="text-white text-4xl font-black italic">E</span>
+              </div>
+              <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-3">Xin chào!</h1>
+              <p className="text-gray-400 font-medium text-sm">Chào mừng bạn đến với kỷ nguyên thi trực tuyến mới</p>
+              
+              <div className="flex bg-gray-50 p-1.5 rounded-2xl mt-10 border border-gray-100">
+                <button 
+                  onClick={() => setAuthForm({...authForm, role: 'student'})}
+                  className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${authForm.role === 'student' ? 'bg-white shadow-lg shadow-gray-200/50 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Học sinh
+                </button>
+                <button 
+                  onClick={() => setAuthForm({...authForm, role: 'teacher'})}
+                  className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${authForm.role === 'teacher' ? 'bg-white shadow-lg shadow-gray-200/50 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Giảng viên
+                </button>
+              </div>
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">EduQuest</h1>
-            <div className="flex bg-gray-100 p-1 rounded-xl mt-6">
-              <button 
-                onClick={() => setAuthForm({...authForm, role: 'student'})}
-                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${authForm.role === 'student' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
-              >
-                Học sinh
-              </button>
-              <button 
-                onClick={() => setAuthForm({...authForm, role: 'teacher'})}
-                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${authForm.role === 'teacher' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'}`}
-              >
-                Giáo viên
-              </button>
-            </div>
-          </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Họ và tên</label>
-              <input
-                type="text"
-                required
-                className="w-full px-5 py-4 rounded-2xl border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all"
-                placeholder="Nguyễn Văn A"
-                value={authForm.name}
-                onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
-              />
-            </div>
-            {authForm.role === 'student' && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Mã số sinh viên</label>
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Họ tên của bạn</label>
                 <input
-                  type="text"
-                  required
-                  className="w-full px-5 py-4 rounded-2xl border border-gray-200 focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none transition-all"
-                  placeholder="SV123456"
-                  value={authForm.studentId}
-                  onChange={(e) => setAuthForm({ ...authForm, studentId: e.target.value })}
+                  type="text" required
+                  className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none transition-all font-bold placeholder:text-gray-300"
+                  placeholder="VD: Minh Quân"
+                  value={authForm.name}
+                  onChange={(e) => setAuthForm({ ...authForm, name: e.target.value })}
                 />
               </div>
-            )}
-            {authForm.role === 'teacher' && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Mã bảo mật (Tùy chọn)</label>
-                <input
-                  type="password"
-                  className="w-full px-5 py-4 rounded-2xl border border-gray-200 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-            )}
-            <button
-              type="submit"
-              className={`w-full text-white font-bold py-4 rounded-2xl shadow-xl transform active:scale-95 transition-all ${authForm.role === 'student' ? 'bg-blue-600 shadow-blue-100 hover:bg-blue-700' : 'bg-indigo-600 shadow-indigo-100 hover:bg-indigo-700'}`}
-            >
-              Đăng nhập {authForm.role === 'student' ? 'Học sinh' : 'Giáo viên'}
-            </button>
-          </form>
+              {authForm.role === 'student' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Mã số sinh viên</label>
+                  <input
+                    type="text" required
+                    className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none transition-all font-bold placeholder:text-gray-300"
+                    placeholder="VD: B20DCCN123"
+                    value={authForm.studentId}
+                    onChange={(e) => setAuthForm({ ...authForm, studentId: e.target.value })}
+                  />
+                </div>
+              )}
+              <button
+                type="submit"
+                className={`w-full text-white font-black py-5 rounded-2xl shadow-2xl transition-all active:scale-95 uppercase tracking-widest text-xs mt-4 ${authForm.role === 'student' ? 'bg-blue-600 shadow-blue-200 hover:bg-blue-700' : 'bg-indigo-600 shadow-indigo-200 hover:bg-indigo-700'}`}
+              >
+                Tiến vào hệ thống
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     );
@@ -131,123 +128,104 @@ const App: React.FC = () => {
       ) : (
         <>
           {currentExam ? (
-            <ExamView 
-              exam={currentExam} 
-              onComplete={handleExamComplete} 
-              onCancel={() => setCurrentExam(null)}
-            />
+            <ExamView exam={currentExam} onComplete={handleExamComplete} onCancel={() => setCurrentExam(null)} />
           ) : lastResult ? (
-            <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-10 text-center text-white">
-                <div className="inline-block p-4 bg-white/20 rounded-full mb-4 backdrop-blur-md">
-                  <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h2 className="text-3xl font-bold mb-2">Hoàn thành bài thi!</h2>
-                <p className="text-blue-100">Kết quả của {user.name}</p>
-              </div>
-
-              <div className="p-8">
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="bg-gray-50 p-6 rounded-2xl text-center border border-gray-100">
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Điểm số</p>
-                    <p className="text-4xl font-black text-blue-600">{lastResult.result.score}/{lastResult.result.totalPoints}</p>
+            <div className="max-w-3xl mx-auto animate-in fade-in zoom-in-95 duration-700">
+               <div className="bg-white rounded-[48px] shadow-2xl shadow-blue-100 overflow-hidden border border-gray-100">
+                  <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-16 text-center text-white relative">
+                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                     <div className="relative z-10">
+                        <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl mx-auto mb-6 flex items-center justify-center">
+                           <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                        </div>
+                        <h2 className="text-4xl font-black mb-3 tracking-tight">Tuyệt vời, {user.name}!</h2>
+                        <p className="text-blue-100 font-medium">Bạn đã hoàn thành bài thi một cách xuất sắc.</p>
+                     </div>
                   </div>
-                  <div className="bg-gray-50 p-6 rounded-2xl text-center border border-gray-100">
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Tỷ lệ</p>
-                    <p className="text-4xl font-black text-emerald-500">
-                      {Math.round((lastResult.result.score / lastResult.result.totalPoints) * 100)}%
-                    </p>
-                  </div>
-                </div>
 
-                <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 mb-8">
-                  <h3 className="flex items-center gap-2 text-blue-800 font-bold mb-3 uppercase text-sm tracking-wide">
-                    <span className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-[10px]">AI</span>
-                    Nhận xét thông minh
-                  </h3>
-                  {isLoading ? (
-                    <div className="flex items-center gap-3 text-gray-400 italic">
-                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                      Đang phân tích kết quả...
+                  <div className="p-12">
+                    <div className="grid grid-cols-2 gap-6 mb-12">
+                       <div className="bg-blue-50/50 p-8 rounded-3xl border border-blue-100 text-center">
+                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Điểm đạt được</p>
+                          <p className="text-5xl font-black text-blue-600 leading-none">{lastResult.result.score}<span className="text-2xl text-blue-300">/{lastResult.result.totalPoints}</span></p>
+                       </div>
+                       <div className="bg-emerald-50/50 p-8 rounded-3xl border border-emerald-100 text-center">
+                          <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Độ chính xác</p>
+                          <p className="text-5xl font-black text-emerald-600 leading-none">
+                            {Math.round((lastResult.result.score / lastResult.result.totalPoints) * 100)}<span className="text-2xl text-emerald-300">%</span>
+                          </p>
+                       </div>
                     </div>
-                  ) : (
-                    <p className="text-gray-700 leading-relaxed text-sm">
-                      {aiFeedback || "Không có nhận xét nào."}
-                    </p>
-                  )}
-                </div>
 
-                <button
-                  onClick={() => {
-                    setLastResult(null);
-                    setAiFeedback(null);
-                  }}
-                  className="w-full bg-gray-900 text-white py-4 rounded-xl font-bold hover:bg-black transition-colors"
-                >
-                  Quay lại trang chủ
-                </button>
-              </div>
+                    <div className="bg-gray-50 rounded-3xl p-8 border border-gray-100">
+                       <h3 className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest mb-4">
+                          <span className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-[10px] text-white">AI</span>
+                          Phân tích hiệu suất từ AI
+                       </h3>
+                       {isLoading ? (
+                         <div className="flex gap-2 animate-pulse">
+                            <div className="h-4 bg-gray-200 rounded-full w-full"></div>
+                         </div>
+                       ) : (
+                         <p className="text-gray-700 font-medium leading-relaxed italic">"{aiFeedback}"</p>
+                       )}
+                    </div>
+
+                    <button 
+                      onClick={() => {setLastResult(null); setAiFeedback(null);}}
+                      className="w-full mt-10 bg-gray-900 text-white py-5 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl hover:bg-black transition-all"
+                    >
+                      Về trang cá nhân
+                    </button>
+                  </div>
+               </div>
             </div>
           ) : (
-            <>
-              <div className="mb-10">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Danh sách đề thi hiện có</h2>
-                <p className="text-gray-500">Chọn một bài thi bên dưới để bắt đầu. Chúc bạn thi tốt!</p>
+            <div className="animate-in fade-in duration-1000">
+              <div className="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
+                <div>
+                   <h2 className="text-4xl font-black text-gray-900 tracking-tighter">Bài thi hôm nay</h2>
+                   <p className="text-gray-400 font-medium mt-2">Chào {user.name}, hãy chọn một thử thách để bắt đầu.</p>
+                </div>
+                <div className="px-5 py-3 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+                   <div className="text-right">
+                      <p className="text-[10px] font-black text-gray-300 uppercase leading-none">Trạng thái</p>
+                      <p className="text-sm font-bold text-emerald-500">Đang hoạt động</p>
+                   </div>
+                   <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {exams.map((exam) => (
-                  <div 
-                    key={exam.id} 
-                    className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden flex flex-col"
-                  >
-                    <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 transition-transform">
-                       <svg className="w-20 h-20" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" /></svg>
+                  <div key={exam.id} className="group bg-white rounded-[40px] p-8 border border-gray-100 hover:border-blue-500 transition-all duration-500 shadow-xl shadow-gray-100/50 hover:shadow-2xl hover:shadow-blue-200/30 flex flex-col relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-[80px] -mr-10 -mt-10 group-hover:bg-blue-500 transition-colors duration-500 flex items-center justify-center pl-6 pt-6">
+                       <svg className="w-8 h-8 text-blue-200 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full uppercase">
-                        {exam.category}
-                      </span>
-                      <span className="px-3 py-1 bg-gray-50 text-gray-500 text-xs font-bold rounded-full uppercase">
-                        {exam.questions.length} Câu
-                      </span>
+                    <div className="flex gap-2 mb-6">
+                      <span className="px-3 py-1 bg-gray-50 text-[10px] font-black text-gray-400 rounded-full uppercase tracking-tighter">{exam.category}</span>
                     </div>
 
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                      {exam.title}
-                    </h3>
-                    <p className="text-gray-500 text-sm mb-6 line-clamp-2">
-                      {exam.description}
-                    </p>
+                    <h3 className="text-2xl font-black text-gray-900 group-hover:text-blue-600 transition-colors mb-3 leading-tight pr-10">{exam.title}</h3>
+                    <p className="text-gray-400 text-sm font-medium mb-8 line-clamp-2 leading-relaxed">{exam.description}</p>
 
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
-                      <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        {exam.durationMinutes} Phút
-                      </div>
-                      <button
-                        onClick={() => setCurrentExam(exam)}
-                        className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all"
-                      >
-                        Bắt đầu thi
-                      </button>
+                    <div className="mt-auto flex items-center justify-between">
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-black text-gray-300 uppercase tracking-tighter leading-none">Thời lượng</p>
+                          <p className="text-lg font-black text-gray-700">{exam.durationMinutes}<span className="text-xs ml-1">PHÚT</span></p>
+                       </div>
+                       <button 
+                         onClick={() => setCurrentExam(exam)}
+                         className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-100 hover:scale-110 active:scale-95 transition-all text-sm"
+                       >
+                         Bắt đầu ngay
+                       </button>
                     </div>
                   </div>
                 ))}
-
-                {exams.length === 0 && !isLoading && (
-                  <div className="col-span-full py-20 text-center">
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                       <svg className="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </div>
-                    <p className="text-gray-400 font-medium">Hiện tại không có đề thi nào.</p>
-                  </div>
-                )}
               </div>
-            </>
+            </div>
           )}
         </>
       )}
